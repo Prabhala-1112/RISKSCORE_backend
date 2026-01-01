@@ -30,6 +30,11 @@ public class RiskScoreController {
             return ResponseEntity.badRequest().build();
         }
         RiskScore score = service.analyzeTarget(target);
+
+        if (score == null) {
+            return ResponseEntity.notFound().build();
+        }
+
         return ResponseEntity.ok(score);
     }
 }

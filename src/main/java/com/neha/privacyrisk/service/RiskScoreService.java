@@ -79,7 +79,14 @@ public class RiskScoreService {
         RiskScore score = new RiskScore();
         score.setTarget(target);
 
-        boolean isUrl = target.startsWith("http") || target.contains(".");
+        boolean isUrl = target.startsWith("http") || target.contains(".") || target.startsWith("www");
+
+        // If it is NOT a URL and NOT in our known database (checked previously), return
+        // NULL to indicate "Not Found"
+        if (!isUrl) {
+            return null; // Controller will translate this to 404
+        }
+
         score.setType(isUrl ? "WEBSITE" : "APPLICATION");
 
         // Generic Description for Unknown Apps
