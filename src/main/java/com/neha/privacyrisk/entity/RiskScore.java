@@ -75,6 +75,9 @@ public class RiskScore {
     @Column(name = "content_rating")
     private String contentRating;
 
+    @Column(name = "tags")
+    private String tags; // Comma separated related words
+
     public String getDescription() {
         return description;
     }
@@ -97,6 +100,14 @@ public class RiskScore {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
     }
 
     public String getContentRating() {

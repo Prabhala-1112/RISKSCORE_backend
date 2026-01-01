@@ -188,6 +188,7 @@ public class RiskScoreService {
                                 "Category: %s | Content Rating: %s | Type: %s. %s %s Based on store metadata and category risk modeling.",
                                 category, contentRating, type, trustDesc, updateDesc));
                 score.setHistory("Imported from Play Store Database.");
+                score.setTags(generateTagsFromCategory(category)); // Generate tags for known apps
 
                 calculateFinalScore(score);
                 return score;
@@ -323,6 +324,7 @@ public class RiskScoreService {
                 String guessedCategory = isUrl ? "Web Resource" : guessCategoryFromName(target);
                 score.setCategory(guessedCategory);
                 score.setContentRating(isUrl ? "Unrated" : "Everyone");
+                score.setTags(generateTagsFromCategory(guessedCategory)); // Generate tags for unknown apps
 
                 if (fetchedDescription != null && !fetchedDescription.isBlank()) {
                         // Case 1: Live URL Data Found
@@ -428,6 +430,31 @@ public class RiskScoreService {
                 if (n.contains("health") || n.contains("fit") || n.contains("med") || n.contains("doc"))
                         return "Health & Fitness";
                 return "General Application"; // specific default
+        }
+
+        private String generateTagsFromCategory(String category) {
+                if (category == null)
+                        return "App, Software";
+                String c = category.toUpperCase();
+
+                if (c.contains("GAME"))
+                        return "Gaming, Entertainment, Casual, Interactive";
+                if (c.contains("SOCIAL"))
+                        return "Network, Chat, Media, Connections";
+                if (c.contains("FINANCE"))
+                        return "Banking, Money, Investment, Secure";
+                if (c.contains("TOOLS"))
+                        return "Utility, Productivity, System, Helper";
+                if (c.contains("SHOPPING"))
+                        return "Ecommerce, Retail, Deals, Marketplace";
+                if (c.contains("MAPS") || c.contains("NAVIGATION"))
+                        return "GPS, Location, Travel, Routing";
+                if (c.contains("HEALTH") || c.contains("FITNESS"))
+                        return "Wellness, Exercise, Medical, Tracker";
+                if (c.contains("WEB RESOURCE"))
+                        return "Website, Online, Internet, Domain";
+
+                return "Application, Utility, Mobile, Software";
         }
 
         private String generateAIStyleDescription(String name, String category) {
