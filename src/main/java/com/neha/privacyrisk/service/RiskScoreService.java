@@ -177,14 +177,53 @@ public class RiskScoreService {
             score.setRiskCategory("Critical");
     }
 
-    // For Search Auto-complete
+    // For Search Auto-complete with Fuzzy Matching
     public java.util.List<String> searchSuggestions(String query) {
         if (query == null || query.isBlank())
             return java.util.Collections.emptyList();
-        String upper = query.toUpperCase();
-        return KNOWN_APPS.keySet().stream()
-                .filter(k -> k.contains(upper))
+
+        String upperQuery = query.toUpperCase();
+
+        // 1. Direct contains match (highest priority)
+        java.util.List<String> exactMatches = KNOWN_APPS.keySet().stream()
+                .filter(k -> k.contains(upperQuery))
                 .sorted()
                 .collect(java.util.stream.Collectors.toList());
+
+        if (!exactMatches.isEmpty()) {
+            return exactMatches;
+        }
+
+        // 2. Fuzzy match (Levenshtein Distance)
+        return KNOWN_APPS.keySet().stream()
+                .filter(k -> calculateLevenshteinDistance(k, upperQuery) <= 3) // Allow up to 3 typos
+                .sorted(java.util.Comparator.comparingInt(k -> calculateLevenshteinDistance(k, upperQuery)))
+                .limit(5)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    // Standard Levenshtein Distance Algorithm
+    private int calculateLevenshteinDistance(String x, String y) {
+        int[][] dp = new int[x.length() + 1][y.length() + 1];
+
+        for (int i = 0; i <= x.length(); i++) {
+            for (int j = 0; j <= y.length(); j++) {
+                if (i == 0) {
+                    dp[i][j] = j;
+                } else if (j == 0) {
+                    dp[i][j] = i;
+                } else {
+                    dp[i][j] = min(dp[i - 1][j - 1]
+                            + (x.charAt(i - 1) == y.charAt(j - 1) ? 0 : 1),
+                            dp[i - 1][j] + 1,
+                            dp[i][j - 1] + 1);
+                }
+            }
+        }
+        return dp[x.length()][y.length()];
+    }
+
+    private int min(int a, int b, int c) {
+        return Math.min(Math.min(a, b), c);
     }
 }
