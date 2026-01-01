@@ -20,8 +20,8 @@ public class RiskScoreService {
                 try {
                         java.io.File file = new java.io.File(DATASET_PATH);
                         if (!file.exists()) {
-                                System.out.println("Dataset file not found: " + file.getAbsolutePath()
-                                                + ". Using defaults.");
+                                System.out.println("Dataset file missing at path: " + file.getAbsolutePath()
+                                                + ". Defaults will be used.");
                                 return;
                         }
 
