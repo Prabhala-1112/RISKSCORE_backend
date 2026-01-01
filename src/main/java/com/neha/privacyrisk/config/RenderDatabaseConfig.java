@@ -28,6 +28,8 @@ public class RenderDatabaseConfig {
         String jdbcUrl = dbUrl;
         if (jdbcUrl.startsWith("postgres://")) {
             jdbcUrl = jdbcUrl.replace("postgres://", "jdbc:postgresql://");
+        } else if (jdbcUrl.startsWith("postgresql://")) {
+            jdbcUrl = jdbcUrl.replace("postgresql://", "jdbc:postgresql://");
         }
 
         config.setJdbcUrl(jdbcUrl);
