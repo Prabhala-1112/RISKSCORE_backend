@@ -47,21 +47,33 @@ public class RiskScoreService {
                                                         // If No Index: Name is at [0], Category at [1]
                                                         int nameIdx = hasIndex ? 1 : 0;
                                                         int catIdx = hasIndex ? 2 : 1;
+                                                        int ratingIdx = hasIndex ? 3 : 2;
+                                                        int reviewsIdx = hasIndex ? 4 : 3;
                                                         int typeIdx = hasIndex ? 7 : 6;
-                                                        int ratingIdx = hasIndex ? 9 : 8;
+                                                        int contentRatingIdx = hasIndex ? 9 : 8;
+                                                        int lastUpdatedIdx = hasIndex ? 11 : 10;
 
-                                                        if (parts.length <= typeIdx)
+                                                        if (parts.length <= lastUpdatedIdx)
                                                                 continue;
 
                                                         String name = parts[nameIdx];
                                                         String category = parts[catIdx];
                                                         String type = parts.length > typeIdx ? parts[typeIdx] : "Free";
-                                                        String contentRating = parts.length > ratingIdx
-                                                                        ? parts[ratingIdx]
+                                                        String contentRating = parts.length > contentRatingIdx
+                                                                        ? parts[contentRatingIdx]
                                                                         : "Everyone";
+                                                        String ratingStr = parts.length > ratingIdx ? parts[ratingIdx]
+                                                                        : "0.0";
+                                                        String reviewsStr = parts.length > reviewsIdx
+                                                                        ? parts[reviewsIdx]
+                                                                        : "0";
+                                                        String lastUpdated = parts.length > lastUpdatedIdx
+                                                                        ? parts[lastUpdatedIdx]
+                                                                        : "";
 
                                                         RiskScore score = generateScoreFromMetadata(name, category,
-                                                                        type, contentRating);
+                                                                        type, contentRating, ratingStr, reviewsStr,
+                                                                        lastUpdated);
                                                         KNOWN_APPS.put(name.toUpperCase(), score);
                                                 } catch (Exception e) {
                                                         // Skip malformed lines
@@ -85,7 +97,8 @@ public class RiskScoreService {
                 }
         }
 
-        private RiskScore generateScoreFromMetadata(String name, String category, String type, String contentRating) {
+        private RiskScore generateScoreFromMetadata(String name, String category, String type, String contentRating,
+                        String ratingStr, String reviewsStr, String lastUpdated) {
                 RiskScore score = new RiskScore();
                 score.setTarget(name);
                 score.setType("APPLICATION");
@@ -98,9 +111,10 @@ public class RiskScoreService {
                 int tracking = 40;
 
                 String cat = category.toUpperCase();
-                if (cat.contains("GAME") || cat.contains("FAMILY")) {
+                if (cat.contains("GAME") || cat.contains("FAMILY") || cat.contains("ARCADE")
+                                || cat.contains("ACTION")) {
                         baseRisk = 30;
-                        tracking = 70; // Games often have ads
+                        tracking = 70;
                 } else if (cat.contains("FINANCE") || cat.contains("BUSINESS")) {
                         baseRisk = 50;
                         sensitiveData = 90;
@@ -117,13 +131,11 @@ public class RiskScoreService {
                         sensitiveData = 40;
                 }
 
-                // Adjust for "Type" (Free vs Paid)
                 if ("Free".equalsIgnoreCase(type)) {
-                        tracking += 20; // Free apps behave worse
+                        tracking += 20;
                         baseRisk += 10;
                 }
 
-                // Adjust for Content Rating
                 if (contentRating.contains("Teen")) {
                         baseRisk += 5;
                 } else if (contentRating.contains("Mature") || contentRating.contains("17+")) {
@@ -131,21 +143,50 @@ public class RiskScoreService {
                         tracking += 10;
                 }
 
-                // Deterministic variability
                 int hash = Math.abs(name.hashCode());
                 Random r = new Random(hash);
 
-                score.setExposureLevel(boundary(baseRisk + r.nextInt(15)));
-                score.setUserConsent(boundary(50 + r.nextInt(40))); // Random
+                // --- NEW FLOWCHART FACTORS ---
+                // 9. Legal/Trust & 10. Reviews -> Mapped to User Consent & Base Risk
+                // High rating (>4.0) implies user trust/verification, reducing risk
+                double rating = 3.0;
+                try {
+                        rating = Double.parseDouble(ratingStr);
+                } catch (Exception e) {
+                }
+
+                int trustModifier = 0;
+                if (rating > 4.3)
+                        trustModifier = -15; // High Trust
+                else if (rating < 3.0 && !ratingStr.equals("NaN"))
+                        trustModifier = 15; // Low Trust
+
+                // 11. Update Activity -> Mapped to Network Security
+                // Old apps have unpatched vulnerabilities
+                int outdatedRisk = 0;
+                if (lastUpdated.contains("201")) { // 2018, 2019...
+                        outdatedRisk = 20;
+                } else if (lastUpdated.contains("2020") || lastUpdated.contains("2021")) {
+                        outdatedRisk = 10;
+                }
+
+                score.setExposureLevel(boundary(baseRisk + r.nextInt(15) + trustModifier));
+                score.setUserConsent(boundary(50 + r.nextInt(40) + trustModifier)); // Higher rating = better consent
+                                                                                    // (lower score)
                 score.setDataSensitivity(boundary(sensitiveData + r.nextInt(10)));
                 score.setRetentionPeriod(boundary(30 + r.nextInt(50)));
                 score.setTrackingRisk(boundary(tracking + r.nextInt(15)));
                 score.setPermissionRisk(boundary(baseRisk + 10 + r.nextInt(20)));
-                score.setNetworkSecurityRisk(boundary(40 + r.nextInt(40)));
+                score.setNetworkSecurityRisk(boundary(40 + r.nextInt(40) + outdatedRisk)); // Updates affect security
+
+                // Description to reflect these factors
+                String trustDesc = (rating > 4.3) ? "High user trust (" + ratingStr + "/5)." : "Moderate/Low trust.";
+                String updateDesc = (outdatedRisk > 0) ? "App has not been updated recently; potential vulnerabilities."
+                                : "App is actively maintained.";
 
                 score.setDescription(String.format(
-                                "Category: %s | Content Rating: %s | Type: %s. Analysis based on store metadata and category risk modeling.",
-                                category, contentRating, type));
+                                "Category: %s | Content Rating: %s | Type: %s. %s %s Based on store metadata and category risk modeling.",
+                                category, contentRating, type, trustDesc, updateDesc));
                 score.setHistory("Imported from Play Store Database.");
 
                 calculateFinalScore(score);
