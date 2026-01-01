@@ -12,5 +12,6 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/risk_dataset.csv risk_dataset.csv
 EXPOSE 8091
 ENTRYPOINT ["java","-jar","app.jar"]
