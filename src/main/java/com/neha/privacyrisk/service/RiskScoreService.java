@@ -15,7 +15,6 @@ public class RiskScoreService {
         private final String DATASET_PATH = "risk_dataset.csv";
 
         // Replaced static block with dynamic loader
-        // Replaced static block with dynamic loader
         @jakarta.annotation.PostConstruct
         public void loadDataset() {
                 try {

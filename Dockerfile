@@ -1,6 +1,11 @@
 
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
+# Copy project files
+COPY pom.xml .
+COPY src ./src
+COPY risk_dataset.csv .
+# Force cache invalidation 2026-01-01
 COPY . .
 # Build frontend inside Docker (optional, but ensures consistent environment)
 # For simplicity in this Dockerfile, we assume the user ran 'prepare_for_deploy.ps1' locally
