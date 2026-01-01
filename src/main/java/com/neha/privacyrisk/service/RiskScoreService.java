@@ -55,6 +55,99 @@ public class RiskScoreService {
         KNOWN_APPS.put("GOOGLE", createKnown("Google.com", "WEBSITE", 60, 50, 50, 100, 90, 20, 20,
                 "Google Search is a search engine provided by Google. It handles more than 3.5 billion searches per day and has a 92% share of the global search engine market.",
                 "Google began in 1996 as a research project by Larry Page and Sergey Brin. It was incorporated in 1998. The company's mission is 'to organize the world's information and make it universally accessible and useful'."));
+        // --- E-COMMERCE (INDIA & GLOBAL) ---
+        KNOWN_APPS.put("FLIPKART", createKnown("Flipkart", "APPLICATION", 85, 60, 80, 100, 90, 85, 70,
+                "Flipkart is an Indian e-commerce company, headquartered in Bengaluru, and incorporated in Singapore as a private limited company. It is a dominant online retailer in India.",
+                "Founded in 2007 by Sachin Bansal and Binny Bansal (no relation), Flipkart started as an online bookstore before expanding into other product categories. In 2018, U.S.-based retail chain Walmart acquired a 77% controlling stake in Flipkart for US$16 billion."));
+
+        KNOWN_APPS.put("MYNTRA", createKnown("Myntra", "APPLICATION", 80, 65, 75, 100, 85, 80, 70,
+                "Myntra is a major Indian fashion e-commerce company headquartered in Bengaluru, Karnataka, India.",
+                "Established in 2007 to personalize gift items, Myntra shifted to online retailing of branded apparel in 2010. It was acquired by Flipkart in 2014."));
+
+        KNOWN_APPS.put("SNAPDEAL", createKnown("Snapdeal", "APPLICATION", 75, 60, 70, 90, 80, 75, 65,
+                "Snapdeal is an Indian e-commerce company based in New Delhi, India.",
+                "Founded in February 2010 by Kunal Bahl and Rohit Bansal. It has expanded to offer a wide assortment of products."));
+
+        KNOWN_APPS.put("EBAY", createKnown("eBay", "APPLICATION", 70, 50, 70, 100, 85, 80, 60,
+                "eBay Inc. is an American multinational e-commerce corporation based in San Jose, California, that facilitates consumer-to-consumer and business-to-consumer sales through its website.",
+                "Founded in 1995 by Pierre Omidyar, eBay became a notable success story of the dot-com bubble."));
+
+        KNOWN_APPS.put("SHEIN", createKnown("Shein", "APPLICATION", 95, 70, 85, 100, 100, 90, 85,
+                "Shein is a Chinese online fast fashion retailer based in Singapore. It is known for its incredibly low prices and vast selection of trendy clothing.",
+                "Founded in 2008 by Chris Xu. Shein has faced criticism regarding data privacy, labor practices, and environmental impact."));
+
+        // --- FINANCE & PAYMENTS ---
+        KNOWN_APPS.put("PAYTM", createKnown("Paytm", "APPLICATION", 90, 80, 95, 100, 90, 95, 80,
+                "Paytm is an Indian multinational financial technology company specializing in digital payments and financial services.",
+                "Founded in 2010 by Vijay Shekhar Sharma under One97 Communications. It played a major role in India's digital payment revolution, especially after the 2016 demonetization."));
+
+        KNOWN_APPS.put("PHONEPE", createKnown("PhonePe", "APPLICATION", 85, 80, 90, 100, 85, 90, 75,
+                "PhonePe is an Indian digital payments and financial technology company headquartered in Bengaluru.",
+                "Founded in 2015 and acquired by Flipkart in 2016. It was the first payment app built on Unified Payments Interface (UPI)."));
+
+        KNOWN_APPS.put("GPAY", createKnown("Google Pay", "APPLICATION", 80, 85, 90, 100, 80, 95, 70,
+                "Google Pay is a mobile payment service developed by Google to power in-app, online, and in-person contactless purchases on mobile devices.",
+                "Originally launched as Android Pay in 2015, it was rebranded as Google Pay in 2018. In India, it was launched as Tez in 2017 before rebranding."));
+
+        KNOWN_APPS.put("PAYPAL", createKnown("PayPal", "APPLICATION", 70, 85, 95, 100, 75, 95, 60,
+                "PayPal Holdings, Inc. is an American multinational financial technology company operating an online payments system.",
+                "Established in 1998 as Confinity. It went public in 2002 and was acquired by eBay later that year, spinning off back into an independent company in 2015."));
+
+        // --- FOOD & TRAVEL ---
+        KNOWN_APPS.put("ZOMATO", createKnown("Zomato", "APPLICATION", 80, 70, 80, 90, 95, 75, 60,
+                "Zomato is an Indian multinational restaurant aggregator and food delivery company.",
+                "Founded in 2008 by Deepinder Goyal and Pankaj Chaddah. It provides information, menus, and user-reviews of restaurants as well as food delivery options."));
+
+        KNOWN_APPS.put("SWIGGY", createKnown("Swiggy", "APPLICATION", 80, 70, 80, 90, 95, 75, 60,
+                "Swiggy is an Indian online food ordering and delivery platform.",
+                "Founded in 2014, Swiggy is headquartered in Bangalore and operates in more than 500 Indian cities."));
+
+        KNOWN_APPS.put("UBER", createKnown("Uber", "APPLICATION", 85, 75, 85, 100, 100, 80, 70,
+                "Uber Technologies, Inc. is an American mobility as a service provider, allowing users to book car transportation.",
+                "Founded in 2009 by Travis Kalanick and Garrett Camp. Uber revolutionized the taxi industry with its app-based ride-hailing model, though it has faced numerous regulatory and privacy controversies."));
+
+        KNOWN_APPS.put("OLA", createKnown("Ola Cabs", "APPLICATION", 85, 70, 85, 100, 100, 80, 70,
+                "Ola Cabs is an Indian multinational ridesharing company offering services that include vehicle for hire and food delivery.",
+                "Founded in 2010 by Bhavish Aggarwal and Ankit Bhati. It is one of the largest ride-hailing companies in the world."));
+
+        // --- SOCIAL MEDIA EXTENDED ---
+        KNOWN_APPS.put("LINKEDIN", createKnown("LinkedIn", "APPLICATION", 60, 80, 80, 100, 70, 85, 50,
+                "LinkedIn is a business and employment-focused social media platform that works through websites and mobile apps.",
+                "Launched in 2003, it is now owned by Microsoft. It is primarily used for professional networking and career development."));
+
+        KNOWN_APPS.put("SNAPCHAT", createKnown("Snapchat", "APPLICATION", 90, 60, 80, 90, 95, 80, 75,
+                "Snapchat is an American multimedia instant messaging app and service developed by Snap Inc.",
+                "One of the principal features of Snapchat is that pictures and messages are usually only available for a short time before they become inaccessible using the app."));
+
+        KNOWN_APPS.put("REDDIT", createKnown("Reddit", "APPLICATION", 70, 50, 60, 100, 85, 70, 60,
+                "Reddit is an American social news aggregation, web content rating, and discussion website.",
+                "Founded in 2005. Registered members submit content to the site such as links, text posts, images, and videos, which are then voted up or down by other members."));
+
+        KNOWN_APPS.put("PINTEREST", createKnown("Pinterest", "APPLICATION", 60, 60, 60, 100, 80, 70, 50,
+                "Pinterest is an image sharing and social media service designed to enable saving and discovery of information on the internet using images and, on a smaller scale, animated GIFs and videos.",
+                "Founded in 2009. It is described as a 'catalogue of ideas' that inspires users to 'go out and do that thing'."));
+
+        // --- ENTERTAINMENT ---
+        KNOWN_APPS.put("NETFLIX", createKnown("Netflix", "APPLICATION", 50, 80, 85, 100, 60, 90, 40,
+                "Netflix is an American subscription video on-demand over-the-top streaming service.",
+                "Founded in 1997 by Reed Hastings and Marc Randolph in Scotts Valley, California. It started as a DVD-by-mail service before transitioning to streaming in 2007."));
+
+        KNOWN_APPS.put("SPOTIFY", createKnown("Spotify", "APPLICATION", 60, 70, 70, 100, 70, 80, 50,
+                "Spotify is a Swedish audio streaming and media services provider.",
+                "Founded in 2006 by Daniel Ek and Martin Lorentzon. It is one of the largest music streaming service providers, with over 500 million monthly active users."));
+
+        KNOWN_APPS.put("YOUTUBE", createKnown("YouTube", "APPLICATION", 70, 60, 65, 100, 85, 85, 60,
+                "YouTube is an American online video sharing and social media platform owned by Google.",
+                "Launched in 2005 by Steve Chen, Chad Hurley, and Jawed Karim. Ideally known for user-generated content, it has become the second most visited website in the world."));
+
+        // --- PRODUCTIVITY ---
+        KNOWN_APPS.put("ZOOM", createKnown("Zoom", "APPLICATION", 65, 85, 80, 90, 80, 85, 60,
+                "Zoom Video Communications is a communications technology company that provides videotelephony and online chat services.",
+                "Founded in 2011 by Eric Yuan. It saw a massive surge in usage during the COVID-19 pandemic for remote work and education."));
+
+        KNOWN_APPS.put("SLACK", createKnown("Slack", "APPLICATION", 60, 80, 85, 100, 70, 90, 50,
+                "Slack is a comprehensive instant messaging program designed by Slack Technologies and owned by Salesforce.",
+                "Launched in 2013, it offers many IRC-style features, including persistent chat rooms (channels) organized by topic, private groups, and direct messaging."));
     }
 
     public RiskScoreService(RiskScoreRepository repository) {
