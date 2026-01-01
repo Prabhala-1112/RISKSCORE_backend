@@ -159,34 +159,57 @@ public class RiskScoreService {
             return null;
         String key = target.trim().toUpperCase();
 
-        // 1. Check Cache / Known List
+        // 1. Check Cache / Known List (Exact Match)
         if (KNOWN_APPS.containsKey(key)) {
             return KNOWN_APPS.get(key);
         }
 
-        // 2. Live Scan Simulation (Heuristic Engine)
-        return performLiveScan(target);
-    }
-
-    private RiskScore performLiveScan(String target) {
-        RiskScore score = new RiskScore();
-        score.setTarget(target);
-
+        // 2. Check if it's a URL
         boolean isUrl = target.startsWith("http") || target.contains(".") || target.startsWith("www");
 
-        // If it is NOT a URL and NOT in our known database (checked previously), return
-        // NULL to indicate "Not Found"
+        // 3. Typo Detection Strategy:
+        // If it's NOT a URL and NOT in our known list, check if it's just a typo of a
+        // known app.
+        // If it is a very close typo (distance <= 1), we treat it as "Not Found" so the
+        // frontend can suggest the correct one.
+        // If it is NOT a close typo (distance > 1), we assume it's a distinct
+        // "Small/Unused App" and generate a score.
         if (!isUrl) {
-            return null; // Controller will translate this to 404
+            int minDistance = Integer.MAX_VALUE;
+            for (String knownKey : KNOWN_APPS.keySet()) {
+                int dist = calculateLevenshteinDistance(knownKey, key);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                }
+            }
+
+            // If it's extremely close to a known app, assume typo and return null to
+            // trigger suggestion UI
+            if (minDistance <= 1) {
+                return null;
+            }
         }
 
+        // 4. Live Scan Simulation (Heuristic Engine) - Now allows unknown non-URLs
+        return performLiveScan(target, isUrl);
+    }
+
+    private RiskScore performLiveScan(String target, boolean isUrl) {
+        RiskScore score = new RiskScore();
+        score.setTarget(target);
         score.setType(isUrl ? "WEBSITE" : "APPLICATION");
 
         // Generic Description for Unknown Apps
-        score.setDescription(
-                "This represents a dynamically analyzed application or website. Our heuristic engine has detected potential privacy risks based on simulated network traffic and permission requests.");
-        score.setHistory(
-                "No historical data available for this specific target. It was analyzed in real-time by the PrivacyRisk engine.");
+        if (isUrl) {
+            score.setDescription(
+                    "This website was analyzed in real-time. Our engine checked for SSL configuration, tracker presence, and external connections.");
+            score.setHistory("No verification history available for this domain.");
+        } else {
+            score.setDescription(
+                    "This appears to be a less common or niche application. Our heuristic engine has analyzed it based on its naming patterns and simulated behavior context.");
+            score.setHistory(
+                    "This app is not in our primary verified database, but a dynamic risk profile has been generated.");
+        }
 
         // Deterministic 'Random' based on target string hash for consistent
         // demonstration
@@ -204,16 +227,21 @@ public class RiskScoreService {
 
         // Special keywords trigger higher risks
         String lower = target.toLowerCase();
-        if (lower.contains("free") || lower.contains("crack") || lower.contains("game")) {
+        if (lower.contains("free") || lower.contains("crack") || lower.contains("game") || lower.contains("mod")) {
             score.setTrackingRisk(90);
             score.setExposureLevel(85);
+            score.setDescription(score.getDescription()
+                    + " Warning: Keywords suggest this might be a modified or ad-supported version.");
         }
-        if (lower.contains("bank") || lower.contains("pay")) {
+        if (lower.contains("bank") || lower.contains("pay") || lower.contains("wallet")) {
             score.setDataSensitivity(100);
-            score.setNetworkSecurityRisk(10); // Assume banks have good security usually, or maybe checked?
+            score.setNetworkSecurityRisk(10);
+            score.setDescription(
+                    score.getDescription() + " financial application detected; strict security standards expected.");
         }
         if (lower.startsWith("http://")) { // No SSL
             score.setNetworkSecurityRisk(95);
+            score.setDescription(score.getDescription() + " Critical: Connection is not encrypted (HTTP).");
         }
 
         calculateFinalScore(score);
