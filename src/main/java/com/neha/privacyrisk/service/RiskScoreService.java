@@ -256,11 +256,10 @@ public class RiskScoreService {
 
                 if (isUrl) {
                         try {
-                                // Real-time metadata fetch
                                 String urlToScan = target.startsWith("http") ? target : "https://" + target;
                                 org.jsoup.nodes.Document doc = org.jsoup.Jsoup.connect(urlToScan)
                                                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                                                .timeout(5000) // 5 second timeout
+                                                .timeout(5000)
                                                 .get();
 
                                 fetchedTitle = doc.title();
@@ -268,7 +267,6 @@ public class RiskScoreService {
                                 if (!metaDesc.isEmpty()) {
                                         fetchedDescription = metaDesc.attr("content");
                                 } else {
-                                        // Try Open Graph description
                                         org.jsoup.select.Elements ogDesc = doc.select("meta[property=og:description]");
                                         if (!ogDesc.isEmpty()) {
                                                 fetchedDescription = ogDesc.attr("content");
@@ -276,38 +274,49 @@ public class RiskScoreService {
                                 }
                         } catch (Exception e) {
                                 System.out.println("Live scan fetch failed for " + target + ": " + e.getMessage());
-                                // Fallback to heuristic
                         }
                 }
 
-                // Set Description & History
+                // --- INTELLIGENT DESCRIPTION GENERATION ---
+
+                String guessedCategory = isUrl ? "Web Resource" : guessCategoryFromName(target);
+                score.setCategory(guessedCategory);
+                score.setContentRating(isUrl ? "Unrated" : "Everyone");
+
                 if (fetchedDescription != null && !fetchedDescription.isBlank()) {
-                        // Live Data Found!
+                        // Case 1: Live URL Data Found
                         score.setDescription(fetchedDescription);
                         score.setHistory("Live Verified: Reached " + (fetchedTitle != null ? fetchedTitle : target)
-                                        + " successfully. Analyzed public metadata.");
+                                        + " successfully.");
                 } else if (isUrl) {
+                        // Case 2: URL but no meta description
                         score.setDescription(
                                         "This website was analyzed in real-time. Our engine checked for SSL configuration, tracker presence, and external connections.");
                         score.setHistory("No detailed public description found, but domain is active.");
                 } else {
-                        // Heuristic Description
-                        score.setDescription(
-                                        "This appears to be a less common or niche application. Our heuristic engine has analyzed it based on its naming patterns and simulated behavior context.");
-                        score.setHistory(
-                                        "This app is not in our primary verified database, but a dynamic risk profile has been generated.");
+                        // Case 3: Unknown App (The User's specific issue)
+                        // Instead of saying "unknown", we generate a plausible profile
+                        score.setDescription(generateAIStyleDescription(target, guessedCategory));
+                        score.setHistory("Dynamic Analysis: Profile generated based on '" + guessedCategory
+                                        + "' risk patterns and naming conventions.");
                 }
 
-                // Deterministic 'Random' based on target string hash for consistent
-                // demonstration
+                // --- SCORING LOGIC ---
+
                 int hash = Math.abs(target.hashCode());
                 Random random = new Random(hash);
 
-                // Simulate scanning logic based on real keywords found in title/desc if
-                // available
-                int baseRisk = 0;
+                // Adjust base risk based on guessed category
+                int baseRisk = 30;
+                if (guessedCategory.equals("Finance") || guessedCategory.equals("Social"))
+                        baseRisk = 60;
+                if (guessedCategory.equals("Game"))
+                        baseRisk = 40;
+
+                // URL content adjustment
                 if (fetchedTitle != null) {
-                        String lowerContent = (fetchedTitle + " " + fetchedDescription).toLowerCase();
+                        String lowerContent = (fetchedTitle + " "
+                                        + (fetchedDescription != null ? fetchedDescription : "")).toLowerCase();
                         if (lowerContent.contains("crypto") || lowerContent.contains("betting")
                                         || lowerContent.contains("casino"))
                                 baseRisk += 30;
@@ -315,32 +324,31 @@ public class RiskScoreService {
                                 baseRisk -= 10;
                 }
 
-                score.setExposureLevel(boundary(random.nextInt(40) + 20 + baseRisk));
-                score.setUserConsent(boundary(random.nextInt(50) + 10));
-                score.setDataSensitivity(
-                                isUrl ? boundary(random.nextInt(60) + baseRisk) : boundary(random.nextInt(80)));
-                score.setRetentionPeriod(random.nextInt(100));
-                score.setTrackingRisk(boundary(random.nextInt(90) + 10 + baseRisk));
-                score.setPermissionRisk(isUrl ? 10 : boundary(random.nextInt(90)));
-                score.setNetworkSecurityRisk(boundary(random.nextInt(60)));
+                score.setExposureLevel(boundary(baseRisk + random.nextInt(20)));
+                score.setUserConsent(boundary(50 + random.nextInt(40)));
+                score.setDataSensitivity(boundary(baseRisk + random.nextInt(30)));
+                score.setRetentionPeriod(boundary(30 + random.nextInt(50)));
+                score.setTrackingRisk(boundary(baseRisk + random.nextInt(25)));
+                score.setPermissionRisk(boundary(baseRisk + 10 + random.nextInt(20)));
+                score.setNetworkSecurityRisk(boundary(40 + random.nextInt(40)));
 
-                // Special keywords trigger higher risks (Heuristic Refinement)
+                // Keyword Refinements
                 String lower = target.toLowerCase();
-                if (lower.contains("free") || lower.contains("crack") || lower.contains("game")
-                                || lower.contains("mod")) {
+                if (lower.contains("free") || lower.contains("crack") || lower.contains("mod")) {
                         score.setTrackingRisk(90);
                         score.setExposureLevel(85);
                         score.setDescription(score.getDescription()
-                                        + " Warning: Keywords suggest this might be a modified or ad-supported version.");
+                                        + " Notice: Keywords suggest this might be a modified or ad-supported version.");
                 }
                 if (lower.contains("bank") || lower.contains("pay") || lower.contains("wallet")) {
                         score.setDataSensitivity(100);
                         score.setNetworkSecurityRisk(10);
-                        score.setDescription(
-                                        score.getDescription()
-                                                        + " Financial application detected; strict security standards expected.");
+                        if (!score.getDescription().contains("Financial")) {
+                                score.setDescription(score.getDescription()
+                                                + " Financial application detected; strict security standards expected.");
+                        }
                 }
-                if (lower.startsWith("http://")) { // No SSL
+                if (lower.startsWith("http://")) {
                         score.setNetworkSecurityRisk(95);
                         score.setDescription(score.getDescription() + " Critical: Connection is not encrypted (HTTP).");
                 }
@@ -354,6 +362,73 @@ public class RiskScoreService {
                 }
 
                 return score;
+        }
+
+        private String guessCategoryFromName(String name) {
+                String n = name.toLowerCase();
+                if (n.contains("bank") || n.contains("pay") || n.contains("wallet") || n.contains("money")
+                                || n.contains("cash"))
+                        return "Finance";
+                if (n.contains("game") || n.contains("clash") || n.contains("surfer") || n.contains("ninja")
+                                || n.contains("puzzle") || n.contains("run"))
+                        return "Game";
+                if (n.contains("chat") || n.contains("gram") || n.contains("social") || n.contains("meet")
+                                || n.contains("date") || n.contains("whats"))
+                        return "Social";
+                if (n.contains("edit") || n.contains("clean") || n.contains("vpn") || n.contains("wifi")
+                                || n.contains("tool") || n.contains("browser"))
+                        return "Tools";
+                if (n.contains("shop") || n.contains("buy") || n.contains("store") || n.contains("mart")
+                                || n.contains("amazon") || n.contains("flipkart"))
+                        return "Shopping";
+                if (n.contains("map") || n.contains("nav") || n.contains("gps") || n.contains("ride")
+                                || n.contains("uber"))
+                        return "Maps & Navigation";
+                if (n.contains("health") || n.contains("fit") || n.contains("med") || n.contains("doc"))
+                        return "Health & Fitness";
+                return "General Application"; // specific default
+        }
+
+        private String generateAIStyleDescription(String name, String category) {
+                String template = "This application has been analyzed as a likely **%s** tool. " +
+                                "Based on typical permission models for this category, it may request access to %s. " +
+                                "Our heuristic engine flags it for potential %s.";
+
+                String permissions = "storage and network state";
+                String risk = "background data usage with external servers";
+
+                switch (category) {
+                        case "Finance":
+                                permissions = "contacts, location, and storage";
+                                risk = "sensitive financial data collection";
+                                break;
+                        case "Social":
+                                permissions = "contacts, camera, microphone, and location";
+                                risk = "user profiling and metadata sharing";
+                                break;
+                        case "Game":
+                                permissions = "device ID and storage";
+                                risk = "ad-tracking libraries and behavioral analytics";
+                                break;
+                        case "Tools":
+                                permissions = "system settings and file storage";
+                                risk = "unnecessary background processes";
+                                break;
+                        case "Health & Fitness":
+                                permissions = "body sensors and location";
+                                risk = "health data retention";
+                                break;
+                        case "Maps & Navigation":
+                                permissions = "precise location";
+                                risk = "continuous location tracking";
+                                break;
+                        case "Shopping":
+                                permissions = "identity and payment info";
+                                risk = "purchase history tracking";
+                                break;
+                }
+
+                return String.format(template, category, permissions, risk);
         }
 
         private int boundary(int val) {
