@@ -34,23 +34,37 @@ public class RiskScoreService {
                                                 continue;
                                         }
 
-                                        // New CSV Format:
-                                        // App, Category, Rating, Reviews, Size, Installs, Type, Price, Content Rating,
-                                        // Genres, Last Updated, Current Ver, Android Ver
                                         String[] parts = parseCsvLine(line);
 
+                                        // Check for valid line length (Index + fields)
                                         if (parts.length >= 2) {
                                                 try {
-                                                        String name = parts[0];
-                                                        String category = parts[1];
-                                                        String type = parts.length > 6 ? parts[6] : "Free";
-                                                        String contentRating = parts.length > 8 ? parts[8] : "Everyone";
-                                                        // Generate Scores based on Metadata
+                                                        // Detect if column 0 is an index (integer)
+                                                        boolean hasIndex = isIndexColumn(parts[0]);
+
+                                                        // Adjust indices based on presence of Index column
+                                                        // If Index present: Name is at [1], Category at [2]
+                                                        // If No Index: Name is at [0], Category at [1]
+                                                        int nameIdx = hasIndex ? 1 : 0;
+                                                        int catIdx = hasIndex ? 2 : 1;
+                                                        int typeIdx = hasIndex ? 7 : 6;
+                                                        int ratingIdx = hasIndex ? 9 : 8;
+
+                                                        if (parts.length <= typeIdx)
+                                                                continue;
+
+                                                        String name = parts[nameIdx];
+                                                        String category = parts[catIdx];
+                                                        String type = parts.length > typeIdx ? parts[typeIdx] : "Free";
+                                                        String contentRating = parts.length > ratingIdx
+                                                                        ? parts[ratingIdx]
+                                                                        : "Everyone";
+
                                                         RiskScore score = generateScoreFromMetadata(name, category,
                                                                         type, contentRating);
                                                         KNOWN_APPS.put(name.toUpperCase(), score);
                                                 } catch (Exception e) {
-                                                        // Skip malformed lines silently
+                                                        // Skip malformed lines
                                                 }
                                         }
                                 }
@@ -59,6 +73,15 @@ public class RiskScoreService {
                 } catch (Exception e) {
                         e.printStackTrace();
                         System.err.println("Error loading dataset: " + e.getMessage());
+                }
+        }
+
+        private boolean isIndexColumn(String val) {
+                try {
+                        Integer.parseInt(val.trim());
+                        return true;
+                } catch (NumberFormatException e) {
+                        return false;
                 }
         }
 
@@ -127,8 +150,13 @@ public class RiskScoreService {
                 return score;
         }
 
-        // Improved CSV parser to handle commas inside quotes
+        // Improved Parser handles TAB or Comma
         private String[] parseCsvLine(String line) {
+                if (line.contains("\t")) {
+                        return line.split("\t");
+                }
+
+                // Fallback to Comma logic
                 java.util.List<String> tokens = new java.util.ArrayList<>();
                 StringBuilder sb = new StringBuilder();
                 boolean inQuotes = false;
