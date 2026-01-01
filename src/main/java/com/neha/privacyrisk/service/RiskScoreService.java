@@ -14,24 +14,47 @@ public class RiskScoreService {
 
     static {
         // format: Target, Exposure, Consent, Sensitivity, Retention, Tracking,
-        // Permission, Network, Type
+        // Permission, Network, Type, Description, History
 
         // --- SOCIAL MEDIA ---
-        KNOWN_APPS.put("TIKTOK", createKnown("TikTok", "APPLICATION", 100, 75, 75, 100, 100, 90, 80));
-        KNOWN_APPS.put("FACEBOOK", createKnown("Facebook", "APPLICATION", 100, 75, 75, 100, 100, 85, 80));
-        KNOWN_APPS.put("INSTAGRAM", createKnown("Instagram", "APPLICATION", 75, 75, 75, 100, 90, 80, 75));
-        KNOWN_APPS.put("X", createKnown("X (Twitter)", "APPLICATION", 100, 25, 25, 100, 80, 60, 50));
+        KNOWN_APPS.put("TIKTOK", createKnown("TikTok", "APPLICATION", 100, 75, 75, 100, 100, 90, 80,
+                "TikTok is a short-form video hosting service owned by the Chinese internet technology company ByteDance. It allows users to create, share, and discover short videos ranging from 15 seconds to 10 minutes.",
+                "TikTok was launched in 2016 in China as Douyin. It was released internationally in 2017 after merging with Musical.ly. It quickly became one of the most downloaded apps worldwide, known for its algorithmic feed and viral challenges."));
+
+        KNOWN_APPS.put("FACEBOOK", createKnown("Facebook", "APPLICATION", 100, 75, 75, 100, 100, 85, 80,
+                "Facebook is an online social media and social networking service owned by Meta Platforms. It allows users to connect with friends, family, and communities.",
+                "Founded in 2004 by Mark Zuckerberg and fellow Harvard College students, Facebook began as a directory for college students. It expanded globally to become the largest social network in the world, with over 3 billion active users."));
+
+        KNOWN_APPS.put("INSTAGRAM", createKnown("Instagram", "APPLICATION", 75, 75, 75, 100, 90, 80, 75,
+                "Instagram is a photo and video sharing social networking service owned by Meta Platforms. Users upload media that can be edited with filters and organized by hashtags and geographical tagging.",
+                "Created by Kevin Systrom and Mike Krieger, Instagram launched in October 2010. It was acquired by Facebook (now Meta) in April 2012 for approximately US$1 billion. It has since evolved to include Stories and Reels features."));
+
+        KNOWN_APPS.put("X", createKnown("X (Twitter)", "APPLICATION", 100, 25, 25, 100, 80, 60, 50,
+                "X, formerly known as Twitter, is a social media platform for real-time microblogging. Users post and interact with short messages known as 'posts' or 'tweets'.",
+                "Twitter was created in March 2006. It became a global platform for breaking news and public discourse. In 2022, it was acquired by Elon Musk for $44 billion and subsequently rebranded to X in July 2023."));
 
         // --- MESSAGING ---
-        KNOWN_APPS.put("WHATSAPP", createKnown("WhatsApp", "APPLICATION", 75, 75, 25, 75, 50, 60, 20));
-        KNOWN_APPS.put("SIGNAL", createKnown("Signal", "APPLICATION", 0, 0, 0, 0, 0, 10, 0));
+        KNOWN_APPS.put("WHATSAPP", createKnown("WhatsApp", "APPLICATION", 75, 75, 25, 75, 50, 60, 20,
+                "WhatsApp is a freeware, cross-platform, centralized instant messaging (IM) and voice-over-IP (VoIP) service owned by Meta Platforms.",
+                "Founded in 2009 by Brian Acton and Jan Koum, WhatsApp was acquired by Facebook in 2014 for approx. US$19.3 billion. It is one of the most popular messaging apps globally, known for end-to-end encryption."));
+
+        KNOWN_APPS.put("SIGNAL", createKnown("Signal", "APPLICATION", 0, 0, 0, 0, 0, 10, 0,
+                "Signal is an encrypted instant messaging service developed by the non-profit Signal Foundation and Signal Messenger LLC. It uses standard cellular telephone numbers as identifiers.",
+                "Signal was launched in 2014, evolving from earlier encrypted voice and text apps RedPhone and TextSecure. Ideally known for its focus on privacy and minimal data collection."));
 
         // --- SHOPPING ---
-        KNOWN_APPS.put("AMAZON", createKnown("Amazon", "APPLICATION", 75, 50, 75, 100, 80, 90, 40));
-        KNOWN_APPS.put("TEMU", createKnown("Temu", "APPLICATION", 100, 75, 75, 100, 100, 95, 90));
+        KNOWN_APPS.put("AMAZON", createKnown("Amazon", "APPLICATION", 75, 50, 75, 100, 80, 90, 40,
+                "Amazon Shopping allows users to browse, search, and purchase millions of products from Amazon.com. It features personalized recommendations, order tracking, and voice shopping.",
+                "Amazon started as an online bookstore in 1994. It has expanded to become the world's largest online marketplace, AI assistant provider, and cloud computing platform."));
+
+        KNOWN_APPS.put("TEMU", createKnown("Temu", "APPLICATION", 100, 75, 75, 100, 100, 95, 90,
+                "Temu is an online marketplace operated by PDD Holdings. It offers discounted goods shipped directly from China to consumers worldwide.",
+                "Launched in the United States in September 2022, Temu quickly gained popularity due to its extremely low prices and aggressive marketing campaigns, including Super Bowl ads."));
 
         // --- GOOGLE ---
-        KNOWN_APPS.put("GOOGLE", createKnown("Google.com", "WEBSITE", 60, 50, 50, 100, 90, 20, 20));
+        KNOWN_APPS.put("GOOGLE", createKnown("Google.com", "WEBSITE", 60, 50, 50, 100, 90, 20, 20,
+                "Google Search is a search engine provided by Google. It handles more than 3.5 billion searches per day and has a 92% share of the global search engine market.",
+                "Google began in 1996 as a research project by Larry Page and Sergey Brin. It was incorporated in 1998. The company's mission is 'to organize the world's information and make it universally accessible and useful'."));
     }
 
     public RiskScoreService(RiskScoreRepository repository) {
@@ -58,6 +81,12 @@ public class RiskScoreService {
 
         boolean isUrl = target.startsWith("http") || target.contains(".");
         score.setType(isUrl ? "WEBSITE" : "APPLICATION");
+
+        // Generic Description for Unknown Apps
+        score.setDescription(
+                "This represents a dynamically analyzed application or website. Our heuristic engine has detected potential privacy risks based on simulated network traffic and permission requests.");
+        score.setHistory(
+                "No historical data available for this specific target. It was analyzed in real-time by the PrivacyRisk engine.");
 
         // Deterministic 'Random' based on target string hash for consistent
         // demonstration
@@ -99,7 +128,7 @@ public class RiskScoreService {
     }
 
     private static RiskScore createKnown(String target, String type, int exposure, int consent, int sensitivity,
-            int retention, int tracking, int permission, int network) {
+            int retention, int tracking, int permission, int network, String description, String history) {
         RiskScore score = new RiskScore();
         score.setTarget(target);
         score.setType(type);
@@ -110,6 +139,8 @@ public class RiskScoreService {
         score.setTrackingRisk(tracking);
         score.setPermissionRisk(permission);
         score.setNetworkSecurityRisk(network);
+        score.setDescription(description);
+        score.setHistory(history);
         calculateFinalScore(score);
         return score;
     }

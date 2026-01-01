@@ -62,6 +62,28 @@ public class RiskScore {
     @Column(name = "risk_category")
     private String riskCategory; // Low, Medium, High, Critical
 
+    @Column(name = "description", length = 4096)
+    private String description;
+
+    @Column(name = "history", length = 4096)
+    private String history;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getHistory() {
+        return history;
+    }
+
+    public void setHistory(String history) {
+        this.history = history;
+    }
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
