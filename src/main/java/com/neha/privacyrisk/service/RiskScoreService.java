@@ -190,16 +190,43 @@ public class RiskScoreService {
                         return KNOWN_APPS.get(key);
                 }
 
-                // 2. Check if it's a URL
+                // 2. Intelligent Search (Starts With / Contains)
+                // This handles cases like user typing "WhatsApp" for "WhatsApp Messenger"
+                RiskScore bestMatch = null;
+                int shortestMatchLen = Integer.MAX_VALUE;
+
+                for (java.util.Map.Entry<String, RiskScore> entry : KNOWN_APPS.entrySet()) {
+                        String knownKey = entry.getKey();
+
+                        // Priority 1: Starts With (e.g. "Whats" -> "WhatsApp")
+                        if (knownKey.startsWith(key)) {
+                                // Prefer the shortest valid match (closest to exact)
+                                if (knownKey.length() < shortestMatchLen) {
+                                        shortestMatchLen = knownKey.length();
+                                        bestMatch = entry.getValue();
+                                }
+                        }
+                }
+
+                // If no "start with" match, try "contains" (e.g. "Surfers" -> "Subway Surfers")
+                if (bestMatch == null) {
+                        for (java.util.Map.Entry<String, RiskScore> entry : KNOWN_APPS.entrySet()) {
+                                if (entry.getKey().contains(key)) {
+                                        // Pick the first reasonable containment match
+                                        bestMatch = entry.getValue();
+                                        break;
+                                }
+                        }
+                }
+
+                if (bestMatch != null) {
+                        return bestMatch;
+                }
+
+                // 3. Check if it's a URL
                 boolean isUrl = target.startsWith("http") || target.contains(".") || target.startsWith("www");
 
-                // 3. Typo Detection Strategy:
-                // If it's NOT a URL and NOT in our known list, check if it's just a typo of a
-                // known app.
-                // If it is a very close typo (distance <= 1), we treat it as "Not Found" so the
-                // frontend can suggest the correct one.
-                // If it is NOT a close typo (distance > 1), we assume it's a distinct
-                // "Small/Unused App" and generate a score.
+                // 4. Typo Detection Strategy (Only if not URL)
                 if (!isUrl) {
                         int minDistance = Integer.MAX_VALUE;
                         for (String knownKey : KNOWN_APPS.keySet()) {
@@ -208,15 +235,12 @@ public class RiskScoreService {
                                         minDistance = dist;
                                 }
                         }
-
-                        // If it's extremely close to a known app, assume typo and return null to
-                        // trigger suggestion UI
-                        if (minDistance <= 1) {
-                                return null;
+                        if (minDistance <= 2) { // Slightly relaxed typo tolerance
+                                return null; // Trigger frontend suggestions
                         }
                 }
 
-                // 4. Live Scan Simulation (Heuristic Engine) - Now allows unknown non-URLs
+                // 5. Live Scan Simulation (Heuristic Engine) - Fallback
                 return performLiveScan(target, isUrl);
         }
 
