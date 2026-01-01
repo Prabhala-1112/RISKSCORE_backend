@@ -68,6 +68,13 @@ public class RiskScore {
     @Column(name = "history", length = 4096)
     private String history;
 
+    // Added for enhanced frontend display
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "content_rating")
+    private String contentRating;
+
     public String getDescription() {
         return description;
     }
@@ -82,6 +89,22 @@ public class RiskScore {
 
     public void setHistory(String history) {
         this.history = history;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getContentRating() {
+        return contentRating;
+    }
+
+    public void setContentRating(String contentRating) {
+        this.contentRating = contentRating;
     }
 
     @Column(name = "created_at")

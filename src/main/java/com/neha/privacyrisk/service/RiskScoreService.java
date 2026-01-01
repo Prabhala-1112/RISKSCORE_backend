@@ -89,6 +89,8 @@ public class RiskScoreService {
                 RiskScore score = new RiskScore();
                 score.setTarget(name);
                 score.setType("APPLICATION");
+                score.setCategory(category);
+                score.setContentRating(contentRating);
 
                 // Base risk based on Category
                 int baseRisk = 20;
