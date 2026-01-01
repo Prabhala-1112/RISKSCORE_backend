@@ -25,7 +25,9 @@ public class RenderDatabaseConfig {
         HikariConfig config = new HikariConfig();
 
         // Fix Render's postgres:// format to jdbc:postgresql://
-        String jdbcUrl = dbUrl;
+        String jdbcUrl = dbUrl != null ? dbUrl.trim() : "";
+        System.out.println("DEBUG: Original DB_URL: " + jdbcUrl);
+
         if (jdbcUrl.startsWith("postgres://")) {
             jdbcUrl = jdbcUrl.replace("postgres://", "jdbc:postgresql://");
         } else if (jdbcUrl.startsWith("postgresql://")) {
