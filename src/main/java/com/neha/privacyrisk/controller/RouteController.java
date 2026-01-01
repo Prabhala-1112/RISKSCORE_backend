@@ -6,13 +6,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class RouteController {
 
-    // Forward all non-API paths to index.html for React Router
-    @GetMapping(value = "/{path:[^\\.]*}")
+    // This controller handles client-side routing by forwarding 404s to index.html
+    @org.springframework.web.bind.annotation.RequestMapping(value = "/{path:[^\\.]*}")
     public String redirect() {
         return "forward:/index.html";
     }
 
-    @GetMapping(value = "/**/{path:[^\\.]*}")
+    // Support nested routes
+    @GetMapping("/**/{path:[^\\.]*}")
     public String redirectNested() {
         return "forward:/index.html";
     }
