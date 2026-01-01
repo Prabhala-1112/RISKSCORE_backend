@@ -5,9 +5,9 @@ COPY . .
 # Build frontend inside Docker (optional, but ensures consistent environment)
 # For simplicity in this Dockerfile, we assume the user ran 'prepare_for_deploy.ps1' locally
 # or we can do a multi-stage build. Let's do a pure Java build for simplicity + reliability.
-# Ensure mvnw is executable
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+# Avoid using ./mvnw to prevent Windows line-ending (CRLF) issues
+# The base image already has Maven installed.
+RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
