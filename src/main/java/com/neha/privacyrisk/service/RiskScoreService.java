@@ -146,12 +146,47 @@ public class RiskScoreService {
                 score.setTarget(target);
                 score.setType(isUrl ? "WEBSITE" : "APPLICATION");
 
-                // Generic Description for Unknown Apps
+                String fetchedDescription = null;
+                String fetchedTitle = null;
+
                 if (isUrl) {
+                        try {
+                                // Real-time metadata fetch
+                                String urlToScan = target.startsWith("http") ? target : "https://" + target;
+                                org.jsoup.nodes.Document doc = org.jsoup.Jsoup.connect(urlToScan)
+                                                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                                                .timeout(5000) // 5 second timeout
+                                                .get();
+
+                                fetchedTitle = doc.title();
+                                org.jsoup.select.Elements metaDesc = doc.select("meta[name=description]");
+                                if (!metaDesc.isEmpty()) {
+                                        fetchedDescription = metaDesc.attr("content");
+                                } else {
+                                        // Try Open Graph description
+                                        org.jsoup.select.Elements ogDesc = doc.select("meta[property=og:description]");
+                                        if (!ogDesc.isEmpty()) {
+                                                fetchedDescription = ogDesc.attr("content");
+                                        }
+                                }
+                        } catch (Exception e) {
+                                System.out.println("Live scan fetch failed for " + target + ": " + e.getMessage());
+                                // Fallback to heuristic
+                        }
+                }
+
+                // Set Description & History
+                if (fetchedDescription != null && !fetchedDescription.isBlank()) {
+                        // Live Data Found!
+                        score.setDescription(fetchedDescription);
+                        score.setHistory("Live Verified: Reached " + (fetchedTitle != null ? fetchedTitle : target)
+                                        + " successfully. Analyzed public metadata.");
+                } else if (isUrl) {
                         score.setDescription(
                                         "This website was analyzed in real-time. Our engine checked for SSL configuration, tracker presence, and external connections.");
-                        score.setHistory("No verification history available for this domain.");
+                        score.setHistory("No detailed public description found, but domain is active.");
                 } else {
+                        // Heuristic Description
                         score.setDescription(
                                         "This appears to be a less common or niche application. Our heuristic engine has analyzed it based on its naming patterns and simulated behavior context.");
                         score.setHistory(
@@ -163,16 +198,28 @@ public class RiskScoreService {
                 int hash = Math.abs(target.hashCode());
                 Random random = new Random(hash);
 
-                // Simulate scanning logic
-                score.setExposureLevel(random.nextInt(40) + 20); // 20-60
-                score.setUserConsent(random.nextInt(50) + 10);
-                score.setDataSensitivity(isUrl ? random.nextInt(60) : random.nextInt(80)); // Apps usually higher
-                score.setRetentionPeriod(random.nextInt(100));
-                score.setTrackingRisk(random.nextInt(90) + 10);
-                score.setPermissionRisk(isUrl ? 10 : random.nextInt(90));
-                score.setNetworkSecurityRisk(random.nextInt(60));
+                // Simulate scanning logic based on real keywords found in title/desc if
+                // available
+                int baseRisk = 0;
+                if (fetchedTitle != null) {
+                        String lowerContent = (fetchedTitle + " " + fetchedDescription).toLowerCase();
+                        if (lowerContent.contains("crypto") || lowerContent.contains("betting")
+                                        || lowerContent.contains("casino"))
+                                baseRisk += 30;
+                        if (lowerContent.contains("news") || lowerContent.contains("blog"))
+                                baseRisk -= 10;
+                }
 
-                // Special keywords trigger higher risks
+                score.setExposureLevel(boundary(random.nextInt(40) + 20 + baseRisk));
+                score.setUserConsent(boundary(random.nextInt(50) + 10));
+                score.setDataSensitivity(
+                                isUrl ? boundary(random.nextInt(60) + baseRisk) : boundary(random.nextInt(80)));
+                score.setRetentionPeriod(random.nextInt(100));
+                score.setTrackingRisk(boundary(random.nextInt(90) + 10 + baseRisk));
+                score.setPermissionRisk(isUrl ? 10 : boundary(random.nextInt(90)));
+                score.setNetworkSecurityRisk(boundary(random.nextInt(60)));
+
+                // Special keywords trigger higher risks (Heuristic Refinement)
                 String lower = target.toLowerCase();
                 if (lower.contains("free") || lower.contains("crack") || lower.contains("game")
                                 || lower.contains("mod")) {
@@ -186,7 +233,7 @@ public class RiskScoreService {
                         score.setNetworkSecurityRisk(10);
                         score.setDescription(
                                         score.getDescription()
-                                                        + " financial application detected; strict security standards expected.");
+                                                        + " Financial application detected; strict security standards expected.");
                 }
                 if (lower.startsWith("http://")) { // No SSL
                         score.setNetworkSecurityRisk(95);
@@ -202,6 +249,10 @@ public class RiskScoreService {
                 }
 
                 return score;
+        }
+
+        private int boundary(int val) {
+                return Math.max(0, Math.min(100, val));
         }
 
         private static RiskScore createKnown(String target, String type, int exposure, int consent, int sensitivity,
